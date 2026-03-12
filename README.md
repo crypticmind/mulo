@@ -72,9 +72,13 @@ The package will be placed in `app/build/distributions`.
 ## Run as Service
 
 Make sure a JVM >= 21 is available.
+
 Unpack the distribution somewhere, like `/opt/mulo`.
+
 Create a configuration file somewhere, like `/opt/mulo/mulo.properties`.
+
 Create a new service unit file, like `/etc/systemd/system/mulo.service`.
+
 ```ini
 [Unit]
 Description=Mulo Job Runner
