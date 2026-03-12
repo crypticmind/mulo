@@ -1,0 +1,24 @@
+#!/bin/bash
+
+printenv
+if [ -n "$seconds" ]; then
+  duration=$seconds
+else
+  duration=10
+fi
+start_time=$(date +%s)
+interval=1
+
+while true; do
+    current_time=$(date +"%Y-%m-%d %H:%M:%S")
+    echo "Current date and time: $current_time"
+    current_time_seconds=$(date +%s)
+    elapsed_time=$((current_time_seconds - start_time))
+
+    if [ $elapsed_time -ge $duration ]; then
+        echo "Time limit reached, exiting."
+        break
+    fi
+    sleep $interval
+done
+exit 0

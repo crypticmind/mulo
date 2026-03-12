@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+if [ $# -ne 4 ]; then
+    echo "Usage: $(basename "$0") <mulo-endpoint> <user> <password> <job-id>"
+    exit 1
+fi
+MULO_HOST=$1
+MULO_USER=$2
+MULO_PASS=$3
+JOB=$4
+cnt=0
+while true; do
+  status_line=$(echo "-u $MULO_USER:$MULO_PASS" | curl -K- -s "$MULO_HOST/status/$JOB")
+  read status rc <<< "$status_line"
+  out=$(echo "-u $MULO_USER:$MULO_PASS" | curl -K- -sr $cnt- "$MULO_HOST/output/$JOB")
+  len=${#out}
+  cnt=$((cnt + len))
+  echo -n "$out"
+  if [ "$status" == "running" ]; then
+    sleep 1
+  else
+    echo
+    echo "Job $JOB completed with code $rc"
+    exit "$rc"
+  fi
+done
