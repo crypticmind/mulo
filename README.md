@@ -39,12 +39,12 @@ mulo.jobs=job-a, job-b, job-c
 # For each job...
 # Specify the path to the program to run
 mulo.job.job-a.run=/path/to/job-a
-# Optional: Specify inputs passed to the submit API as form POST variables
+# Optional: Specify inputs received by the submit endpoint as POST variables
 # to be passed along to the program as environment variables
 mulo.job.job-a.inputs=param1, param2
 # Optional: Specify environment variables from the server process  
-# to be passed along to the program as environment variables
-mulo.job.job-a.envs=env1, env
+# to be passed to the program. Anything not listed here is removed.
+mulo.job.job-a.envs=env1, env2
 # Optional: Specify a user to run the program using `sudo -u <user> <program>`
 mulo.job.job-a.sudo.user=a-user-who-runs-job-a
 # Other jobs definitions...
@@ -63,13 +63,15 @@ java.util.logging.SimpleFormatter.format=%1$tF %1$tT %4$s %5$s%n
 
 ## Building
 
-Build the executable:
+Build the distributable:
 ```shell
 ./gradlew distZip
 ```
+The package will be placed in `app/build/distributions`.
 
 ## Run as Service
 
+Make sure a JVM >= 21 is available.
 Unpack the distribution somewhere, like `/opt/mulo`.
 Create a configuration file somewhere, like `/opt/mulo/mulo.properties`.
 Create a new service unit file, like `/etc/systemd/system/mulo.service`.
