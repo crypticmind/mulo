@@ -356,10 +356,9 @@ This is yet another job runner nobody (except myself) needed. Immature software 
 
 ## To Do
 
-- Limit the number of concurrent jobs.
 - Time outs.
 - Make sure all inputs are sanitized.
-- Add tests.
+- Add more tests.
 - Improve error handling.
 
 ## Contributing
