@@ -1,0 +1,47 @@
+name: Build and Publish Release
+on:
+  release:
+    types: [published]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Add version file
+        run: echo "${{ github.event.release.tag_name }}" > app/src/main/resources/version
+
+      - name: Build with Gradle
+        run: ./gradlew build
+      - name: Rename distributions
+        run: |
+          mv app/build/distributions/mulo.tar app/build/distributions/mulo-${{ github.event.release.tag_name }}.tar
+          mv app/build/distributions/mulo.zip app/build/distributions/mulo-${{ github.event.release.tag_name }}.zip
+      - name: Upload for next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-artifact
+          path: app/build/distributions/
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: built-artifact
+          path: app/build/distributions/
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/build/distributions/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

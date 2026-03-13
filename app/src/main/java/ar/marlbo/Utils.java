@@ -1,5 +1,7 @@
 package ar.marlbo;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -52,5 +54,16 @@ public class Utils {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(message);
         }
+    }
+
+    public static String readResource(String name, String defaultValue) {
+        String value = null;
+        try (var is = Utils.class.getResourceAsStream(name)) {
+            if  (is != null) {
+                value = new BufferedReader(new InputStreamReader(is)).readLine();
+            }
+        } catch (Exception ignored) {
+        }
+        return value != null ? value : defaultValue;
     }
 }

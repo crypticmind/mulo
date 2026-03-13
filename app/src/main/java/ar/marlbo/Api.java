@@ -1,6 +1,7 @@
 package ar.marlbo;
 
 import static ar.marlbo.Utils.LOGGER;
+import static ar.marlbo.Utils.readResource;
 import static ar.marlbo.Utils.require;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
@@ -24,9 +25,13 @@ public class Api implements HttpHandler {
     private static final Pattern RANGE_PATTERN = Pattern.compile("^bytes=(\\d+)-$");
     private static final String FROM_ZERO = "bytes=0-";
 
+    private final String healthLine;
+
     private final JobRunner jobRunner;
 
     public Api(JobRunner jobRunner) {
+        var version = readResource("/version", "");
+        this.healthLine = version.isEmpty() ? "Mulo ready!" : "Mulo " + version + " ready!";
         this.jobRunner = jobRunner;
     }
 
@@ -66,7 +71,7 @@ public class Api implements HttpHandler {
     }
 
     private void health(HttpExchange exchange) throws IOException {
-        reply(exchange, 200, "Mulo ready!");
+        reply(exchange, 200, this.healthLine);
     }
 
     private void submit(HttpExchange exchange, String name) throws IOException {
@@ -84,8 +89,8 @@ public class Api implements HttpHandler {
             switch (maybeJob.get()) {
                 case QueuedJob ignored -> reply(exchange, 200, "queued");
                 case RunJob ignored -> reply(exchange, 200, "running");
-                case FinishedJob job -> reply(exchange, 200, "stopped " + job.process().exitValue());
-                case FailedJob job -> reply(exchange, 200, "failed " + exceptionMessage(job));
+                case FinishedJob job -> reply(exchange, 200, "stopped %d", job.process().exitValue());
+                case FailedJob job -> reply(exchange, 200, "failed %s", exceptionMessage(job));
             }
         } else {
             reply(exchange, 404, "Not Found");
@@ -126,8 +131,8 @@ public class Api implements HttpHandler {
         }
     }
 
-    private void reply(HttpExchange exchange, int status, String response) throws IOException {
-        var bytes = response.getBytes(UTF_8);
+    private void reply(HttpExchange exchange, int status, String response, Object... args) throws IOException {
+        var bytes = String.format(response, args).getBytes(UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
         exchange.sendResponseHeaders(status, bytes.length);
         try (var os = exchange.getResponseBody()) {

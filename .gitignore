@@ -8,3 +8,4 @@ build
 .kotlin
 .DS_Store
 .idea
+/app/src/main/resources/version

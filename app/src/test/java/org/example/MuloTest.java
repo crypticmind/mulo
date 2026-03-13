@@ -178,13 +178,17 @@ class MuloTest {
     @Test
     void testSubmit_unknownJob() throws Exception {
         var response = submit("unknown", Map.of());
-        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(400);
     }
 
     @Test
     void testSubmit_success() throws Exception {
         var response = submit("wait-for-signal", Map.of());
-        assertThat(response.statusCode()).isEqualTo(202);
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(202);
         var jobId = response.body();
         assertThat(jobId).isNotBlank();
     }
@@ -192,7 +196,9 @@ class MuloTest {
     @Test
     void testStatus_notFound() throws Exception {
         var response = status("unknown");
-        assertThat(response.statusCode()).isEqualTo(404);
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(404);
     }
 
     @Test
@@ -201,10 +207,14 @@ class MuloTest {
             submit("wait-for-signal", Map.of());
         }
         var response = submit("wait-for-signal", Map.of());
-        assertThat(response.statusCode()).isEqualTo(202);
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(202);
         var jobId = response.body();
         response = status(jobId);
-        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(200);
         var status = parseStatus(response.body());
         assertThat(status.status).isEqualTo("queued");
         assertThat(status.info).isEmpty();
@@ -217,7 +227,9 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("running");
             assertThat(status.info).isEmpty();
@@ -227,7 +239,9 @@ class MuloTest {
         }
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("stopped");
             assertThat(status.info).contains("0");
@@ -241,7 +255,9 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("failed");
             assertThat(status.info).contains("java.lang.RuntimeException: Execution failed");
@@ -255,7 +271,9 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("stopped");
             assertThat(status.info).contains("123");
@@ -286,13 +304,17 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("queued");
         });
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var outputResp = output(jobId, null);
-            assertThat(outputResp.statusCode()).isEqualTo(204);
+            assertThat(outputResp.statusCode())
+                    .describedAs(outputResp.body())
+                    .isEqualTo(204);
             assertThat(outputResp.headers().firstValue("Content-Range")).isEmpty();
             assertThat(outputResp.body()).isEmpty();
         });
@@ -305,19 +327,25 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("stopped");
         });
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var outputResp = output(jobId, null);
-            assertThat(outputResp.statusCode()).isEqualTo(216);
+            assertThat(outputResp.statusCode())
+                    .describedAs(outputResp.body())
+                    .isEqualTo(216);
             assertThat(outputResp.headers().firstValue("Content-Range")).contains("bytes 0/*");
             assertThat(outputResp.body()).isEqualTo("test-output");
         });
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var outputResp = output(jobId, 5);
-            assertThat(outputResp.statusCode()).isEqualTo(216);
+            assertThat(outputResp.statusCode())
+                    .describedAs(outputResp.body())
+                    .isEqualTo(216);
             assertThat(outputResp.headers().firstValue("Content-Range")).contains("bytes 5/*");
             assertThat(outputResp.body()).isEqualTo("output");
         });
@@ -330,13 +358,17 @@ class MuloTest {
         var jobId = response.body();
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var statusResp = status(jobId);
-            assertThat(statusResp.statusCode()).isEqualTo(200);
+            assertThat(statusResp.statusCode())
+                    .describedAs(statusResp.body())
+                    .isEqualTo(200);
             var status = parseStatus(statusResp.body());
             assertThat(status.status).isEqualTo("failed");
         });
         await().atMost(5, SECONDS).untilAsserted(() -> {
             var outputResp = output(jobId, null);
-            assertThat(outputResp.statusCode()).isEqualTo(200);
+            assertThat(outputResp.statusCode())
+                    .describedAs(outputResp.body())
+                    .isEqualTo(200);
             assertThat(outputResp.headers().firstValue("Content-Range")).isEmpty();
             assertThat(outputResp.body()).isEqualTo("java.lang.RuntimeException: Execution failed");
         });
@@ -347,8 +379,10 @@ class MuloTest {
         var endpoint = URI.create(MuloTest.endpoint);
         var request = HttpRequest.newBuilder().uri(endpoint).build();
         var response = client.send(request, BodyHandlers.ofString());
-        assertThat(response.statusCode()).isEqualTo(200);
-        assertThat(response.body()).isEqualTo("Mulo ready!");
+        assertThat(response.statusCode())
+                .describedAs(response.body())
+                .isEqualTo(200);
+        assertThat(response.body()).matches("Mulo (.+)?ready!");
     }
 
     private HttpResponse<String> submit(String name, Map<String, String> params) throws Exception {
