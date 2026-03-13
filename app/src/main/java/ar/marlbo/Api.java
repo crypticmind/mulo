@@ -1,6 +1,7 @@
 package ar.marlbo;
 
 import static ar.marlbo.Utils.LOGGER;
+import static ar.marlbo.Utils.require;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.SEVERE;
@@ -10,10 +11,15 @@ import java.io.RandomAccessFile;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import ar.marlbo.JobRunner.FailedJob;
+import ar.marlbo.JobRunner.FinishedJob;
+import ar.marlbo.JobRunner.HasOutput;
+import ar.marlbo.JobRunner.QueuedJob;
+import ar.marlbo.JobRunner.RunJob;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-class Api implements HttpHandler {
+public class Api implements HttpHandler {
 
     private static final Pattern RANGE_PATTERN = Pattern.compile("^bytes=(\\d+)-$");
     private static final String FROM_ZERO = "bytes=0-";
@@ -48,16 +54,12 @@ class Api implements HttpHandler {
         } catch (Exception ex) {
             LOGGER.log(
                     SEVERE,
-                    "Error on %s %s",
+                    "Error on {0} {1}: {2}",
                     new Object[]{exchange.getRequestMethod(), exchange.getRequestURI().getPath(), ex}
             );
             reply(
                     exchange,
-                    switch (ex) {
-                        case IllegalArgumentException ignored -> 400;
-                        case UnsupportedOperationException ignored -> 416;
-                        default -> 500;
-                    },
+                    ex instanceof IllegalArgumentException ? 400 : 500,
                     ex.getMessage() == null ? ex.toString() : ex.getMessage()
             );
         }
@@ -79,12 +81,19 @@ class Api implements HttpHandler {
     private void status(HttpExchange exchange, String jobId) throws IOException {
         var maybeJob = jobRunner.getJob(jobId);
         if (maybeJob.isPresent()) {
-            var process = maybeJob.get().process();
-            var status = process.isAlive() ? "running" : "stopped " + process.exitValue();
-            reply(exchange, 200, status);
+            switch (maybeJob.get()) {
+                case QueuedJob ignored -> reply(exchange, 200, "queued");
+                case RunJob ignored -> reply(exchange, 200, "running");
+                case FinishedJob job -> reply(exchange, 200, "stopped " + job.process().exitValue());
+                case FailedJob job -> reply(exchange, 200, "failed " + exceptionMessage(job));
+            }
         } else {
             reply(exchange, 404, "Not Found");
         }
+    }
+
+    private static String exceptionMessage(FailedJob job) {
+        return job.exception().toString();
     }
 
     private void output(HttpExchange exchange, String jobId) throws IOException {
@@ -93,20 +102,26 @@ class Api implements HttpHandler {
             reply(exchange, 404, "Not Found");
             return;
         }
-        var job = maybeJob.get();
-        var range = Optional.ofNullable(exchange.getRequestHeaders().getFirst("Range")).orElse(FROM_ZERO);
-        var matcher = RANGE_PATTERN.matcher(range);
-        if (!matcher.matches()) throw new UnsupportedRangeException("Invalid range");
-        var from = Long.parseLong(matcher.group(1));
-        try (var output = new RandomAccessFile(job.output(), "r"); var os = exchange.getResponseBody()) {
-            output.seek(from);
-            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
-            exchange.getResponseHeaders().set("Content-Range", "bytes " + from + "/*");
-            exchange.sendResponseHeaders(216, 0);
-            var buffer = new byte[1024];
-            int read;
-            while ((read = output.read(buffer)) != -1) {
-                os.write(buffer, 0, read);
+
+        switch (maybeJob.get()) {
+            case QueuedJob ignored -> reply(exchange, 204, "");
+            case FailedJob job -> reply(exchange, 200, exceptionMessage(job));
+            case HasOutput job -> {
+                var range = Optional.ofNullable(exchange.getRequestHeaders().getFirst("Range")).orElse(FROM_ZERO);
+                var matcher = RANGE_PATTERN.matcher(range);
+                require(matcher.matches(), "Invalid range");
+                var from = Long.parseLong(matcher.group(1));
+                try (var output = new RandomAccessFile(job.output(), "r"); var os = exchange.getResponseBody()) {
+                    output.seek(from);
+                    exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+                    exchange.getResponseHeaders().set("Content-Range", "bytes " + from + "/*");
+                    exchange.sendResponseHeaders(216, 0);
+                    var buffer = new byte[1024];
+                    int read;
+                    while ((read = output.read(buffer)) != -1) {
+                        os.write(buffer, 0, read);
+                    }
+                }
             }
         }
     }

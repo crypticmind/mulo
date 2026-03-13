@@ -15,8 +15,12 @@ while true; do
   len=${#out}
   cnt=$((cnt + len))
   echo -n "$out"
-  if [ "$status" == "running" ]; then
+  if [ "$status" == "queued" ] || [ "$status" == "running" ]; then
     sleep 1
+  elif [ "$status" == "failed" ]; then
+    echo
+    echo "Job $JOB failed: ${status_line:7}"
+    exit 100
   else
     echo
     echo "Job $JOB completed with code $rc"

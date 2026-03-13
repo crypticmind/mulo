@@ -175,14 +175,44 @@ GET http://localhost:8000/status/00742d17-793c-48a3-a365-260c2ff12068
 
 HTTP/1.1 200 OK
 Content-type: text/plain; charset=UTF-8
+Content-length: 6
+
+queued
+```
+
+```http request
+GET http://localhost:8000/status/00742d17-793c-48a3-a365-260c2ff12068
+
+HTTP/1.1 200 OK
+Content-type: text/plain; charset=UTF-8
 Content-length: 9
 
 stopped 0
 ```
 
+```http request
+GET http://localhost:8000/status/00742d17-793c-48a3-a365-260c2ff12068
+
+HTTP/1.1 200 OK
+Content-type: text/plain; charset=UTF-8
+Content-length: 97
+
+failed java.io.IOException: Cannot run program "non-existent": error=2, No such file or directory
+```
+
 ### Get Job Output
 
-Getting all available output.
+Getting the output for a queued job.
+```http request
+GET http://localhost:8000/output/00742d17-793c-48a3-a365-260c2ff12068
+
+HTTP/1.1 204 No Content
+Date: Fri, 13 Mar 2026 00:07:17 GMT
+Content-type: text/plain; charset=UTF-8
+
+```
+
+Getting all available output for a running job.
 ```http request
 GET http://localhost:8000/output/00742d17-793c-48a3-a365-260c2ff12068
 
@@ -194,7 +224,7 @@ Content-type: text/plain; charset=UTF-8
 Job execution output...
 ```
 
-Getting all available output from a starting position.
+Getting all available output for a running job from a starting position.
 Only a starting position is recognized.
 ```http request
 GET http://localhost:8000/output/00742d17-793c-48a3-a365-260c2ff12068
@@ -206,6 +236,18 @@ Transfer-encoding: chunked
 Content-type: text/plain; charset=UTF-8
 
 Job execution output from position 100...
+```
+
+Getting the output for a failed job.
+```http request
+GET http://localhost:8000/output/00742d17-793c-48a3-a365-260c2ff12068
+Range: bytes=100-
+
+HTTP/1.1 200 OK
+Content-type: text/plain; charset=UTF-8
+Content-length: 90
+
+java.io.IOException: Cannot run program "non-existent": error=2, No such file or directory
 ```
 
 ## Tracking a Job from a Script
@@ -229,8 +271,12 @@ while true; do
   len=${#out}
   cnt=$((cnt + len))
   echo -n "$out"
-  if [ "$status" == "running" ]; then
+  if [ "$status" == "queued" ] || [ "$status" == "running" ]; then
     sleep 1
+  elif [ "$status" == "failed" ]; then
+    echo
+    echo "Job $JOB failed: ${status_line:7}"
+    exit 100
   else
     echo
     echo "Job $JOB completed with code $rc"
@@ -259,8 +305,12 @@ while true; do
   len=${#out}
   cnt=$((cnt + len))
   echo -n "$out"
-  if [ "$status" == "running" ]; then
+  if [ "$status" == "queued" ] || [ "$status" == "running" ]; then
     sleep 1
+  elif [ "$status" == "failed" ]; then
+    echo
+    echo "Job $JOB failed: ${status_line:7}"
+    exit 100
   else
     echo
     echo "Job $JOB completed with code $rc"

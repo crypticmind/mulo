@@ -8,6 +8,8 @@ repositories {
 
 dependencies {
     testImplementation libs.junit.jupiter
+    testImplementation libs.assertj
+    testImplementation libs.awaitility
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -28,4 +30,5 @@ jar {
 
 tasks.named('test') {
     useJUnitPlatform()
+    environment = System.getenv() + ['e1': 'e1v', 'e2': 'e2v', 'e3': 'irrelevant']
 }
