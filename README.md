@@ -24,9 +24,9 @@ This started from my necessity to run stuff remote from a GitHub action and moni
 - No serialization libraries. Return bare strings and be done with it.
 - No HTTP library. Use the basic `HttpServer` that comes with the JVM (see "Caveats" below).
 - No fancy configuration file. Work with basic Java properties files (see "Configuration" below).
-- No job scheduling/gatekeeping/whatever. Run the job and let it make any decisions about its execution.
-- A virtual thread pool is used only to be able to limit the number of concurrent executions, without depending on 
-the OS.
+- No job scheduling/gatekeeping/whatever. Run the job and let it make any decisions about its execution. The
+  only exception to this is the use of a virtual thread pool to limit the number of concurrent executions without 
+  depending on the OS.
 
 ## Configuration
 
