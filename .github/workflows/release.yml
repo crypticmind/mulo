@@ -21,14 +21,14 @@ jobs:
       - name: Add version file
         run: |
           mkdir -p ${{ github.workspace }}/app/src/main/resources
-          echo "${{ github.event.release.tag_name }}" > ${{ github.workspace }}/app/src/main/resources/version
+          echo "${{ github.ref_name }}" > ${{ github.workspace }}/app/src/main/resources/version
 
       - name: Build with Gradle
         run: ./gradlew build
       - name: Rename distributions
         run: |
-          mv app/build/distributions/mulo.tar app/build/distributions/mulo-${{ github.event.release.tag_name }}.tar
-          mv app/build/distributions/mulo.zip app/build/distributions/mulo-${{ github.event.release.tag_name }}.zip
+          mv app/build/distributions/mulo.tar app/build/distributions/mulo-${{ github.ref_name }}.tar
+          mv app/build/distributions/mulo.zip app/build/distributions/mulo-${{ github.ref_name }}.zip
       - name: Upload for next job
         uses: actions/upload-artifact@v4
         with:
