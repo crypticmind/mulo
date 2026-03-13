@@ -47,3 +47,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/distributions/*
+          token: ${{ secrets.MULO_GH_TOKEN }}
