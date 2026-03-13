@@ -16,7 +16,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Add version file
-        run: echo "${{ github.event.release.tag_name }}" > ${{ github.workspace }}/app/src/main/resources/version
+        run: |
+          ls -l ${{ github.workspace }}
+          echo "${{ github.event.release.tag_name }}" > ${{ github.workspace }}/app/src/main/resources/version
 
       - name: Build with Gradle
         run: ./gradlew build
